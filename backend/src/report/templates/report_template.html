@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ title }}</title>
+  <style>
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #1f2937;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+    h1 {
+      font-size: 24px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .meta {
+      text-align: center;
+      color: #6b7280;
+      font-size: 12px;
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-size: 16px;
+      border-left: 4px solid #3b82f6;
+      padding-left: 10px;
+      margin-top: 28px;
+      margin-bottom: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 10px 12px;
+      text-align: left;
+    }
+    th {
+      background: #f3f4f6;
+      font-weight: 600;
+    }
+    .highlight {
+      background: #eff6ff;
+    }
+    .decline {
+      color: #dc2626;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 12px;
+      color: #9ca3af;
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .badge-high {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .badge-medium {
+      background: #fef9c3;
+      color: #854d0e;
+    }
+    .badge-low {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+  </style>
+</head>
+<body>
+  <h1>{{ title }}</h1>
+  <div class="meta">
+    会话ID: {{ session_id }} &nbsp;|&nbsp;
+    分析周期: {{ start_date }} ~ {{ end_date }} &nbsp;|&nbsp;
+    生成时间: {{ generated_at }}
+  </div>
+
+  <h2>一、分析概览</h2>
+  <table>
+    <tr>
+      <th>分析模式</th>
+      <td>{{ analysis_mode }}</td>
+    </tr>
+    <tr>
+      <th>当前状态</th>
+      <td>{{ current_state }}</td>
+    </tr>
+    <tr>
+      <th>对比周期</th>
+      <td>{{ comparison_period }}</td>
+    </tr>
+  </table>
+
+  <h2>二、归因路径</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>步骤</th>
+        <th>节点</th>
+        <th>类型</th>
+        <th>选择维度</th>
+        <th>熵减</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for step in steps %}
+      <tr {% if loop.last %}class="highlight"{% endif %}>
+        <td>Step {{ step.step_number }}</td>
+        <td>{{ step.node_name }}</td>
+        <td>{{ step.node_type }}</td>
+        <td>{{ step.selected_dimension or '-' }} / {{ step.selected_child or '-' }}</td>
+        <td>
+          {% if step.entropy_results %}
+            {{ "%.1f"|format(step.entropy_results[0].entropy_reduction_normalized * 100) }}%
+          {% else %}
+            -
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if conclusion %}
+  <h2>三、业务结论</h2>
+  <table>
+    <tr>
+      <th>原因类型</th>
+      <td>{{ conclusion.reason_type }}</td>
+    </tr>
+    <tr>
+      <th>置信度</th>
+      <td>
+        <span class="badge badge-{{ conclusion.confidence_level }}">
+          {{ conclusion.confidence_level_label }}
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <th>涉及部门</th>
+      <td>{{ conclusion.involved_departments or '-' }}</td>
+    </tr>
+    <tr>
+      <th>建议行动</th>
+      <td>{{ conclusion.suggested_actions or '-' }}</td>
+    </tr>
+    <tr>
+      <th>详细说明</th>
+      <td>{{ conclusion.detailed_explanation }}</td>
+    </tr>
+  </table>
+  {% endif %}
+
+  {% if report_type == 'process' %}
+  <div style="margin-top: 24px; padding: 12px; background: #fef3c7; border-radius: 6px; font-size: 12px; color: #92400e;">
+    <strong>说明：</strong>本报告为过程报告，分析尚未最终完成，结论部分可能为空。
+  </div>
+  {% endif %}
+
+  <div class="footer">
+    本报告由 GMV 智能归因系统自动生成，仅供内部决策参考。
+  </div>
+</body>
+</html>
