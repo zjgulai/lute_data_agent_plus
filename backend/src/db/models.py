@@ -104,6 +104,9 @@ class AttributionStep(Base):
     # 贡献度
     contributions = Column(JSON, nullable=True)
 
+    # RACI 责任矩阵（在该步骤确定的责任归属）
+    raci_matrix = Column(JSON, nullable=True)
+
     # 时间戳
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -125,6 +128,7 @@ class AttributionStep(Base):
             "cross_dimension_results": self.cross_dimension_results,
             "cross_dimension_completed": bool(self.cross_dimension_completed),
             "contributions": self.contributions,
+            "raci_matrix": self.raci_matrix,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
@@ -148,6 +152,10 @@ class AttributionConclusion(Base):
     suggested_actions = Column(Text, nullable=True)
     confidence_level = Column(String(10), nullable=False)  # high / medium / low
 
+    # RACI 责任矩阵
+    # 格式: {"responsible": ["执行人1", "执行人2"], "accountable": "负责人", "consulted": ["咨询人"], "informed": ["知会人"]}
+    raci_matrix = Column(JSON, nullable=True)
+
     # 引用的外部文件
     referenced_files = Column(JSON, nullable=True)  # ["file_id_1", "file_id_2"]
 
@@ -169,6 +177,7 @@ class AttributionConclusion(Base):
             "involved_departments": self.involved_departments,
             "suggested_actions": self.suggested_actions,
             "confidence_level": self.confidence_level,
+            "raci_matrix": self.raci_matrix,
             "referenced_files": self.referenced_files,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

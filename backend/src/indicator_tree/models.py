@@ -7,6 +7,21 @@ from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
+class RACIMatrix(BaseModel):
+    """RACI 责任矩阵.
+    
+    R (Responsible): 执行人 - 具体执行优化任务的人
+    A (Accountable): 负责人 - 对结果负最终责任的人（只能有一个）
+    C (Consulted): 咨询人 - 需要提供意见的人
+    I (Informed): 知会人 - 需要被告知进展的人
+    """
+
+    responsible: list[str] = Field(default_factory=list, description="执行人列表")
+    accountable: Optional[str] = Field(default=None, description="负责人（唯一）")
+    consulted: list[str] = Field(default_factory=list, description="需咨询的人")
+    informed: list[str] = Field(default_factory=list, description="需知会的人")
+
+
 class DataSource(BaseModel):
     """数据来源配置（用于 BI 只读副本连接）."""
 
@@ -61,6 +76,7 @@ class TreeNode(BaseModel):
     permission_scope: Optional[list[str]] = Field(default=None, description="可见该节点的角色或区域代码列表")
     children: list[TreeNode] = Field(default_factory=list, description="子节点列表")
     dimension_pool: Optional[list[Dimension]] = Field(default=None, description="横向维度切分选项")
+    raci: Optional[RACIMatrix] = Field(default=None, description="RACI 责任矩阵")
 
     @field_validator("formula")
     @classmethod

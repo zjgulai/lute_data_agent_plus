@@ -48,6 +48,11 @@ root:
                   level_code: L4
                   weight: 1.0
                   permission_scope: ["sg_marketing_manager", "global_manager"]
+                  raci:
+                    responsible: ["投放专员-李明", "活动运营-赵敏"]
+                    accountable: "新加坡市场总监-王芳"
+                    consulted: ["数据分析师-张华"]
+                    informed: ["亚太区总经理-陈总"]
     # ========== 经营侧（含数学分解 + 维度池） ==========
     - id: op_side
       name: 经营侧
@@ -120,6 +125,11 @@ root:
                         db_view: "bi_readonly.user_activity"
                         field: "member_day_participation_rate"
                         agg_func: "AVG"
+                      raci:
+                        responsible: ["活动运营-赵敏"]
+                        accountable: "用户运营总监-孙丽"
+                        consulted: ["数据分析师-张华", "产品经理-刘洋"]
+                        informed: ["亚太区总经理-陈总", "CEO办公室"]
                     - id: act_weekly_checkin
                       name: 每周签到率
                       type: action

@@ -31,6 +31,20 @@ export interface Dimension {
   data_slice_rule?: DataSliceRule;
 }
 
+/**
+ * RACI 责任矩阵
+ */
+export interface RACIMatrix {
+  /** 执行人列表 (Responsible) */
+  responsible?: string[];
+  /** 负责人 (Accountable) - 唯一 */
+  accountable?: string;
+  /** 需咨询的人 (Consulted) */
+  consulted?: string[];
+  /** 需知会的人 (Informed) */
+  informed?: string[];
+}
+
 export interface TreeNode {
   id: string;
   name: string;
@@ -46,6 +60,8 @@ export interface TreeNode {
   permission_scope?: string[];
   children: TreeNode[];
   dimension_pool?: Dimension[];
+  /** RACI 责任矩阵 */
+  raci?: RACIMatrix;
 }
 
 export interface IndicatorTree {
@@ -177,4 +193,6 @@ export interface BusinessConclusion {
   suggested_actions?: string;
   confidence_level: 'high' | 'medium' | 'low';
   attached_files?: string[];
+  /** RACI 责任矩阵 */
+  raci_matrix?: RACIMatrix;
 }
