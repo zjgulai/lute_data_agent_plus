@@ -3,181 +3,273 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMV 智能归因系统 - Demo</title>
+    <title>GMV 智能归因系统 - Demo v3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        .tree-line { border-left: 2px solid #E5E7EB; }
-    </style>
+    <style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif}</style>
 </head>
 <body class="bg-gray-100">
     <div id="root"></div>
     <script type="text/babel">
-        const { useState } = React;
-        
-        const orgTree = { id: 'gmv', name: 'GMV', type: 'root', level: 0, change: '-28.8%', children: [{ id: 'org_side', name: '组织侧', type: 'organization', level: 1, weight: 1.0, children: [{ id: 'org_apac', name: '亚太区', type: 'organization', level: 2, weight: 0.4, change: '-45.2%', children: [{ id: 'org_sg', name: '新加坡', type: 'organization', level: 3, weight: 0.6, change: '-62.3%', raci: { responsible: ['李明'], accountable: '王芳', consulted: ['数据分析师'], informed: ['亚太区总经理'] }, children: [{ id: 'org_sg_marketing', name: '新加坡市场部', type: 'organization', level: 4, weight: 1.0, raci: { responsible: ['投放专员-李明', '活动运营-赵敏'], accountable: '市场总监-王芳', consulted: ['数据分析师-张华'], informed: ['亚太区总经理-陈总'] } }] }] }] }] };
-        
-        const opTree = { id: 'gmv', name: 'GMV', type: 'root', level: 0, formula: 'UV × CR × AOV', children: [{ id: 'op_side', name: '经营侧', type: 'operation', level: 1, weight: 1.0, children: [{ id: 'op_user', name: '用户', type: 'operation', level: 2, formula: 'UV × CR × AOV', children: [{ id: 'op_uv', name: 'UV', type: 'operation', level: 3, formula: '新客UV + 老客UV', change: '-35.2%', children: [{ id: 'op_new_uv', name: '新客UV', type: 'operation', level: 4, change: '-48.5%' }, { id: 'op_old_uv', name: '老客UV', type: 'operation', level: 4, change: '-18.3%', children: [{ id: 'act_member', name: '会员日活动参与率', type: 'action', level: 5, entropy: 0.72, change: '-62.3%', raci: { responsible: ['活动运营-赵敏'], accountable: '用户运营总监-孙丽', consulted: ['数据分析师'], informed: ['亚太区总经理'] } }] }] }] }, { id: 'op_marketing', name: '营销', type: 'operation', level: 2, children: [{ id: 'op_ad', name: '广告投放', type: 'operation', level: 3, change: '-28.5%', children: [{ id: 'act_fb', name: 'Facebook广告', type: 'action', level: 4, change: '-45.2%', raci: { responsible: ['海外投放-周杰'], accountable: '投放主管-吴强', consulted: ['创意团队'], informed: ['市场总监'] } }] }] }] }] };
+const{useState}=React;
 
-        const TreeNode = ({ node, isOrg, isExpanded, onToggle, isAnomaly }) => {
-            const bgClass = isOrg ? 'bg-gradient-to-r from-blue-500 to-blue-700' : node.type === 'action' ? 'bg-gradient-to-r from-amber-500 to-amber-700' : 'bg-gradient-to-r from-emerald-500 to-emerald-700';
-            const hasChildren = node.children && node.children.length > 0;
-            return (
-                <div className="ml-4">
-                    <div className={\`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-white text-sm cursor-pointer transition-all \${bgClass} \${isAnomaly ? 'animate-pulse' : ''}\`} onClick={() => { onToggle(); }}>
-                        {hasChildren && <span className="text-xs">{isExpanded ? '▼' : '▶'}</span>}
-                        <span className="font-medium">{node.name}</span>
-                        {node.change && <span className={\`text-xs px-1.5 py-0.5 rounded \${node.change.includes('-') ? 'bg-red-500' : 'bg-green-500'}\`}>{node.change}</span>}
-                        {node.entropy > 0.7 && <span className="text-xs bg-red-600 px-1.5 py-0.5 rounded">⚠️</span>}
-                    </div>
-                    {isExpanded && node.children && (
-                        <div className="tree-line ml-4 mt-2 pl-2">
-                            {node.children.map((child) => <TreeNodeWrapper key={child.id} node={child} isOrg={isOrg} isAnomaly={isAnomaly && (child.id === 'act_member' || child.id === 'org_sg')} />)}
-                        </div>
-                    )}
-                </div>
-            );
-        };
+// 组织树数据
+const orgTree={
+  id:"gmv",name:"GMV",type:"root",change:"-28.8%",
+  children:[{
+    id:"org_side",name:"【组织侧】定责",type:"org",level:1,
+    children:[{
+      id:"org_apac",name:"亚太区",type:"org",level:2,change:"-45.2%",
+      raci:{responsible:["李明"],accountable:"王芳",consulted:["数据分析师"],informed:["亚太区总经理"]},
+      children:[{
+        id:"org_sg",name:"🇸🇬 新加坡",type:"org",level:3,change:"-62.3% ⚠️",
+        children:[{
+          id:"org_sg_mkt",name:"新加坡市场部",type:"org",level:4,
+          raci:{responsible:["投放专员-李明","活动运营-赵敏"],accountable:"市场总监-王芳",consulted:["数据分析师-张华"],informed:["亚太区总经理-陈总"]}
+        }]
+      }]
+    }]
+  }]
+};
 
-        const TreeNodeWrapper = ({ node, isOrg, isAnomaly }) => {
-            const [expanded, setExpanded] = useState(node.level < 3);
-            return <TreeNode node={node} isOrg={isOrg} isExpanded={expanded} onToggle={() => setExpanded(!expanded)} isAnomaly={isAnomaly} />;
-        };
+// 经营树数据  
+const opTree={
+  id:"gmv",name:"GMV",type:"root",formula:"UV×CR×AOV",
+  children:[{
+    id:"op_side",name:"【经营侧】归因",type:"op",level:1,
+    children:[{
+      id:"op_user",name:"用户模块",type:"op",level:2,formula:"UV × CR × AOV",
+      children:[{
+        id:"op_uv",name:"UV",type:"op",level:3,change:"-35.2%",
+        children:[{
+          id:"op_new",name:"新客UV -48.5%",type:"op",level:4
+        },{
+          id:"op_old",name:"老客UV -18.3%",type:"op",level:4,
+          children:[{
+            id:"act_member",name:"🎯 会员日活动参与率",type:"action",level:5,change:"-62.3%",entropy:"0.85",
+            raci:{responsible:["活动运营-赵敏"],accountable:"用户运营总监-孙丽",consulted:["数据分析师","产品经理"],informed:["亚太区总经理","CEO办公室"]}
+          }]
+        }]
+      }]
+    },{
+      id:"op_mkt",name:"营销模块",type:"op",level:2,
+      children:[{
+        id:"op_ad",name:"广告投放",type:"op",level:3,change:"-28.5%",
+        children:[{
+          id:"act_fb",name:"Facebook广告 -45.2%",type:"action",level:4
+        },{
+          id:"act_google",name:"Google广告 -22.1%",type:"action",level:4
+        }]
+      }]
+    },{
+      id:"op_prod",name:"产品模块",type:"op",level:2
+    },{
+      id:"op_supply",name:"供应链",type:"op",level:2
+    }]
+  }]
+};
 
-        const RACIMatrix = ({ raci, title }) => {
-            if (!raci) return null;
-            return (
-                <div className="bg-white rounded-lg shadow p-3 mt-3">
-                    <h4 className="font-semibold text-gray-800 mb-2 text-sm">{title || 'RACI'}</h4>
-                    <div className="grid grid-cols-4 gap-2 text-xs">
-                        {[{ key: 'responsible', label: 'R-执行', color: 'bg-blue-100 text-blue-800' }, { key: 'accountable', label: 'A-负责', color: 'bg-red-100 text-red-800' }, { key: 'consulted', label: 'C-咨询', color: 'bg-amber-100 text-amber-800' }, { key: 'informed', label: 'I-知会', color: 'bg-gray-100 text-gray-800' }].map(({ key, label, color }) => (
-                            <div key={key} className={\`\${color} rounded p-2\`}>
-                                <div className="font-medium mb-1">{label}</div>
-                                <div>{Array.isArray(raci[key]) ? raci[key].join(', ') : raci[key] || '-'}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            );
-        };
+// 树节点组件
+function TreeNode({node,isOrg,isExp,onToggle,isAnomaly}){
+  const hasChildren=node.children&&node.children.length>0;
+  let bgClass;
+  if(isOrg){
+    bgClass="bg-gradient-to-r from-blue-600 to-blue-800";
+  }else if(node.type==="action"){
+    bgClass="bg-gradient-to-r from-amber-500 to-amber-700";
+  }else{
+    bgClass="bg-gradient-to-r from-emerald-500 to-emerald-700";
+  }
+  const animClass=isAnomaly?" animate-pulse ring-2 ring-red-400":"";
+  
+  return(
+    <div className="ml-2">
+      <div className={bgClass+" inline-flex items-center gap-2 px-3 py-2 rounded-lg text-white text-sm cursor-pointer transition hover:scale-105 "+animClass} onClick={()=>hasChildren&&onToggle()}>
+        {hasChildren&&<span>{isExp?"▼":"▶"}</span>}
+        <span className="font-bold">{node.name}</span>
+        {node.change&&<span className={node.change.includes("-")?"text-xs px-2 py-0.5 rounded bg-red-500":"text-xs px-2 py-0.5 rounded bg-green-500"}>{node.change}</span>}
+        {node.entropy>0.7&&<span className="text-xs bg-red-600 px-2 py-0.5 rounded font-bold">🔥根因</span>}
+      </div>
+      {isExp&&hasChildren&&(
+        <div className="ml-4 mt-2 pl-2 border-l-2 border-gray-300">
+          {node.children.map(c=>(
+            <TreeNodeWrap key={c.id} node={c} isOrg={isOrg} isAnomaly={isAnomaly&&(c.id==="org_sg"||c.id==="act_member")}/>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
-        const App = () => {
-            const [activeTab, setActiveTab] = useState('dual');
-            const attributionPath = [{ name: 'GMV', change: '-28.8%', type: 'root' }, { name: '亚太区', change: '-45.2%', type: 'org' }, { name: '新加坡', change: '-62.3%', type: 'org' }, { name: '老客UV', change: '-18.3%', type: 'op' }, { name: '会员日活动', change: '-62.3%', type: 'action', isRootCause: true }];
+function TreeNodeWrap({node,isOrg,isAnomaly}){
+  const[exp,setExp]=useState(node.level<3);
+  return<TreeNode node={node} isOrg={isOrg} isExp={exp} onToggle={()=>setExp(!exp)} isAnomaly={isAnomaly}/>;
+}
 
-            return (
-                <div className="min-h-screen pb-20">
-                    <header className="bg-gradient-to-r from-blue-600 to-purple-700 text-white px-6 py-4 shadow-lg">
-                        <div className="max-w-7xl mx-auto flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-white/20 p-2 rounded-lg text-2xl">📉</div>
-                                <div>
-                                    <h1 className="text-xl font-bold">GMV 智能归因系统</h1>
-                                    <p className="text-xs text-blue-100">双指标树 + 熵减算法 + RACI 定责</p>
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                {['dual', 'org', 'op'].map(tab => (
-                                    <button key={tab} onClick={() => setActiveTab(tab)} className={\`px-4 py-2 rounded-lg text-sm transition \${activeTab === tab ? 'bg-white text-blue-600' : 'bg-white/20'}\`}>
-                                        {tab === 'dual' ? '双树对比' : tab === 'org' ? '组织侧' : '经营侧'}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </header>
+// RACI组件
+function RACI({raci}){
+  if(!raci)return null;
+  const items=[
+    {k:"responsible",l:"R-执行",c:"bg-blue-100 text-blue-800"},
+    {k:"accountable",l:"A-负责",c:"bg-red-100 text-red-800"},
+    {k:"consulted",l:"C-咨询",c:"bg-amber-100 text-amber-800"},
+    {k:"informed",l:"I-知会",c:"bg-gray-100 text-gray-800"}
+  ];
+  return(
+    <div className="mt-3 bg-white rounded-lg shadow p-3">
+      <div className="grid grid-cols-4 gap-2 text-xs">
+        {items.map(({k,l,c})=>(
+          <div key={k} className={c+" rounded p-2"}>
+            <div className="font-bold mb-1">{l}</div>
+            <div>{Array.isArray(raci[k])?raci[k].join(", "):raci[k]||"-"}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-                    <main className="max-w-7xl mx-auto p-6 space-y-6">
-                        {/* 双树展示 */}
-                        <div className={\`grid \${activeTab === 'dual' ? 'grid-cols-2' : 'grid-cols-1'} gap-6\`}>
-                            {(activeTab === 'dual' || activeTab === 'org') && (
-                                <div className="bg-white rounded-xl shadow-sm p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-lg font-semibold text-blue-800">【组织侧】定责树</h3>
-                                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">预定义层级</span>
-                                    </div>
-                                    <div className="bg-blue-50 rounded-lg p-4 max-h-96 overflow-auto">
-                                        <TreeNodeWrapper node={orgTree} isOrg={true} isAnomaly={true} />
-                                    </div>
-                                    <RACIMatrix raci={orgTree.children[0].children[0].children[0].raci} title="新加坡节点 RACI" />
-                                </div>
-                            )}
-                            {(activeTab === 'dual' || activeTab === 'op') && (
-                                <div className="bg-white rounded-xl shadow-sm p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-lg font-semibold text-emerald-800">【经营侧】归因树</h3>
-                                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">维度池 + 熵减</span>
-                                    </div>
-                                    <div className="bg-emerald-50 rounded-lg p-4 max-h-96 overflow-auto">
-                                        <TreeNodeWrapper node={opTree} isOrg={false} isAnomaly={true} />
-                                    </div>
-                                    <RACIMatrix raci={opTree.children[0].children[0].children[0].children[1].children[0].raci} title="根因节点 RACI" />
-                                </div>
-                            )}
-                        </div>
+// 主应用
+function App(){
+  const[tab,setTab]=useState("dual");
+  
+  return(
+    <div className="min-h-screen pb-10">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-blue-600 to-purple-700 text-white px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl">📉</div>
+            <div>
+              <h1 className="text-2xl font-bold">GMV 智能归因系统</h1>
+              <p className="text-blue-200">双指标树 · 熵减算法 · RACI 定责</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {["dual","org","op"].map(t=>{
+              const label=t==="dual"?"双树对比":t==="org"?"组织侧":"经营侧";
+              const cls=tab===t?"bg-white text-blue-600":"bg-white/20 hover:bg-white/30";
+              return<button key={t} onClick={()=>setTab(t)} className={cls+" px-4 py-2 rounded-lg font-medium transition"}>{label}</button>;
+            })}
+          </div>
+        </div>
+      </header>
 
-                        {/* 归因链路 */}
-                        <div className="bg-white rounded-xl shadow-sm p-6">
-                            <h3 className="text-lg font-semibold mb-4">🔗 归因链路（异常传播路径）</h3>
-                            <div className="flex items-center gap-3 overflow-x-auto pb-4">
-                                {attributionPath.map((item, i) => (
-                                    <React.Fragment key={i}>
-                                        <div className={\`flex flex-col items-center p-3 rounded-lg min-w-[120px] \${item.isRootCause ? 'bg-red-100 border-2 border-red-500' : item.type === 'org' ? 'bg-blue-100' : item.type === 'op' ? 'bg-green-100' : 'bg-gray-100'}\`}>
-                                            <span className="font-medium">{item.name}</span>
-                                            <span className={item.change?.includes('-') ? 'text-red-600' : 'text-green-600'}>{item.change}</span>
-                                            {item.isRootCause && <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded mt-1">根因</span>}
-                                        </div>
-                                        {i < attributionPath.length - 1 && <span className="text-gray-400">→</span>}
-                                    </React.Fragment>
-                                ))}
-                            </div>
-                        </div>
+      <main className="max-w-7xl mx-auto p-6 space-y-6">
+        {/* 双树展示 */}
+        <div className={"grid "+(tab==="dual"?"grid-cols-2":"grid-cols-1")+" gap-6"}>
+          {/* 组织侧 */}
+          {(tab==="dual"||tab==="org")&&(
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-xl font-bold text-blue-800 mb-4 flex items-center gap-2">
+                <span className="w-4 h-4 bg-blue-500 rounded-full"></span>
+                【组织侧】定责树
+              </h3>
+              <div className="bg-blue-50 rounded-lg p-4 overflow-auto max-h-[500px]">
+                <TreeNodeWrap node={orgTree} isOrg={true} isAnomaly={true}/>
+              </div>
+              <RACI raci={orgTree.children[0].children[0].children[0].raci}/>
+              <div className="mt-3 text-sm text-gray-600 bg-gray-100 rounded-lg p-3">
+                💡 <strong>用途：</strong>确定责任归属，从全球→区域→国家→部门→责任人逐级下钻
+              </div>
+            </div>
+          )}
+          
+          {/* 经营侧 */}
+          {(tab==="dual"||tab==="op")&&(
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-xl font-bold text-emerald-800 mb-4 flex items-center gap-2">
+                <span className="w-4 h-4 bg-emerald-500 rounded-full"></span>
+                【经营侧】归因树
+              </h3>
+              <div className="bg-emerald-50 rounded-lg p-4 overflow-auto max-h-[500px]">
+                <TreeNodeWrap node={opTree} isOrg={false} isAnomaly={true}/>
+              </div>
+              <RACI raci={opTree.children[0].children[0].children[0].children[1].children[0].raci}/>
+              <div className="mt-3 text-sm text-gray-600 bg-gray-100 rounded-lg p-3">
+                💡 <strong>用途：</strong>定位业务根因，通过 GMV = UV × CR × AOV 公式分解 + 维度池切分
+              </div>
+            </div>
+          )}
+        </div>
 
-                        {/* 最终结论与 RACI */}
-                        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl shadow-sm p-6 border border-red-200">
-                            <h3 className="text-lg font-semibold text-red-800 mb-4">📋 归因结论与责任划分</h3>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <div className="space-y-4">
-                                    <div className="bg-white rounded-lg p-4">
-                                        <h4 className="font-semibold text-gray-800 mb-2">🎯 核心发现</h4>
-                                        <p className="text-gray-700">本次 GMV 下滑主要由 <strong className="text-red-600">新加坡市场部</strong> 的 <strong className="text-red-600">会员日活动参与率</strong> 下降驱动，环比下降 <strong>62.3%</strong>。</p>
-                                    </div>
-                                    <div className="bg-white rounded-lg p-4">
-                                        <h4 className="font-semibold text-gray-800 mb-2">💡 业务建议</h4>
-                                        <ul className="list-disc list-inside text-gray-700 space-y-1 text-sm">
-                                            <li>紧急排查会员日活动的推送机制</li>
-                                            <li>检查新加坡地区的用户触达渠道</li>
-                                            <li>对比历史同期活动数据</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div>
-                                    <RACIMatrix raci={{ responsible: ['活动运营-赵敏', '投放专员-李明'], accountable: '新加坡市场总监-王芳', consulted: ['数据分析师-张华', '用户运营-孙丽'], informed: ['亚太区总经理-陈总', 'CEO办公室'] }} title="🎯 优化责任矩阵 (RACI)" />
-                                    <div className="mt-4 bg-white rounded-lg p-4">
-                                        <h4 className="font-semibold text-gray-800 mb-2">⏰ 时间要求</h4>
-                                        <div className="flex items-center gap-2 text-sm flex-wrap">
-                                            <span className="px-3 py-1 bg-red-100 text-red-700 rounded">48小时内：排查</span>
-                                            <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded">1周内：执行</span>
-                                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded">2周内：验证</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+        {/* 归因链路 */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h3 className="text-xl font-bold mb-4">🔗 归因链路（异常传播路径）</h3>
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            {[
+              {n:"GMV",c:"-28.8%",t:"root"},
+              {n:"亚太区",c:"-45.2%",t:"org"},
+              {n:"新加坡",c:"-62.3%",t:"org"},
+              {n:"老客UV",c:"-18.3%",t:"op"},
+              {n:"会员日活动",c:"-62.3%",t:"rootcause"}
+            ].map((item,i,arr)=>{
+              let cls="flex flex-col items-center p-3 rounded-lg min-w-[110px] ";
+              if(item.t==="rootcause")cls+="bg-red-100 border-2 border-red-500";
+              else if(item.t==="org")cls+="bg-blue-100";
+              else if(item.t==="op")cls+="bg-emerald-100";
+              else cls+="bg-gray-100";
+              return(
+                <React.Fragment key={i}>
+                  <div className={cls}>
+                    <span className="font-bold">{item.n}</span>
+                    <span className={item.c.includes("-")?"text-red-600 font-bold":"text-green-600"}>{item.c}</span>
+                    {item.t==="rootcause"&&<span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded mt-1">🔥根因</span>}
+                  </div>
+                  {i<arr.length-1&&<span className="text-2xl text-gray-400">→</span>}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
 
-                        <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                            <p className="text-sm text-blue-800">
-                                <strong>💡 Demo 说明：</strong> 本演示展示了"双指标树"设计——左侧组织侧用于定责（谁该负责），右侧经营侧用于归因（什么原因）。RACI 矩阵明确了优化责任。
-                            </p>
-                        </div>
-                    </main>
-                </div>
-            );
-        };
+        {/* 最终结论与 RACI */}
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl shadow-lg p-6 border-2 border-red-200">
+          <h3 className="text-xl font-bold text-red-800 mb-4">📋 归因结论与 RACI 责任划分</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="bg-white rounded-lg p-4 shadow">
+                <h4 className="font-bold text-gray-800 mb-2">🎯 核心发现</h4>
+                <p className="text-gray-700">
+                  本次 GMV 下滑主要由 <strong className="text-red-600">新加坡市场部</strong> 的 
+                  <strong className="text-red-600">会员日活动参与率</strong> 下降驱动，环比下降 <strong>62.3%</strong>，超过熵减阈值 0.7。
+                </p>
+              </div>
+              <div className="bg-white rounded-lg p-4 shadow">
+                <h4 className="font-bold text-gray-800 mb-2">💡 业务建议</h4>
+                <ul className="list-disc list-inside text-gray-700 space-y-1 text-sm">
+                  <li>紧急排查会员日活动的推送机制是否正常</li>
+                  <li>检查新加坡地区的用户触达渠道（Push/短信/邮件）</li>
+                  <li>对比历史同期活动数据，定位具体环节问题</li>
+                </ul>
+              </div>
+            </div>
+            <div>
+              <RACI raci={{
+                responsible:["活动运营-赵敏","投放专员-李明"],
+                accountable:"新加坡市场总监-王芳",
+                consulted:["数据分析师-张华","用户运营-孙丽"],
+                informed:["亚太区总经理-陈总","CEO办公室"]
+              }}/>
+            </div>
+          </div>
+        </div>
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        {/* 说明 */}
+        <div className="bg-blue-100 rounded-xl p-4 border border-blue-300">
+          <p className="text-sm text-blue-800">
+            <strong>💡 Demo 说明：</strong>本演示展示了"双指标树"设计——左侧组织侧用于定责（谁该负责），右侧经营侧用于归因（什么原因）。
+            RACI 矩阵明确了优化责任：R=执行人，A=负责人，C=需咨询，I=需知会。
+          </p>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     </script>
 </body>
 </html>
