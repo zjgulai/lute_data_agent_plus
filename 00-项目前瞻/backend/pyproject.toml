@@ -1,0 +1,20 @@
+[project]
+name = "gmv-attribution-backend"
+version = "0.1.0"
+description = "GMV 下滑智能归因系统 - 后端服务"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.27.0",
+    "pydantic>=2.6.0",
+    "pyyaml>=6.0.1",
+    "sqlalchemy>=2.0.0",
+    "pandas>=2.2.0",
+    "numpy>=1.26.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "httpx>=0.27.0",
+]

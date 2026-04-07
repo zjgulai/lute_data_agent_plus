@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  db:
+    image: postgres:15-alpine
+    container_name: gmv-attribution-db
+    environment:
+      POSTGRES_USER: gmv_user
+      POSTGRES_PASSWORD: gmv_password
+      POSTGRES_DB: gmv_attribution
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gmv_user -d gmv_attribution"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 后端服务
+  backend:
+    build: ./backend
+    container_name: gmv-attribution-backend
+    environment:
+      - DATABASE_URL=postgresql://gmv_user:gmv_password@db:5432/gmv_attribution
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-claude}
+    volumes:
+      - ./backend/config:/app/config:ro
+      - ./uploads:/app/uploads
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # 前端服务
+  frontend:
+    build: ./frontend
+    container_name: gmv-attribution-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

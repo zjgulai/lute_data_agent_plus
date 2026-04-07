@@ -1,0 +1,204 @@
+version: "1.0.0"
+root:
+  id: gmv
+  name: GMV
+  type: operation
+  level: 0
+  level_code: L0
+  unit: 元
+  formula: "uv * conversion_rate * avg_order_value"
+  entropy_threshold: 0.2
+  data_source:
+    db_view: "bi_readonly.daily_gmv"
+    field: "gmv"
+    filter: "date BETWEEN '{{start}}' AND '{{end}}'"
+    agg_func: "SUM"
+  children:
+    # ========== 组织侧（预定义层级，不走熵减） ==========
+    - id: org_side
+      name: 组织侧
+      type: organization
+      level: 1
+      level_code: L1
+      weight: 1.0
+      children:
+        - id: org_asia_pacific
+          name: 亚太区
+          type: organization
+          level: 2
+          level_code: L2
+          weight: 0.4
+          data_source:
+            db_view: "bi_readonly.region_gmv"
+            field: "gmv"
+            filter: "region == 'Asia_Pacific'"
+            agg_func: "SUM"
+          children:
+            - id: org_sg
+              name: 新加坡
+              type: organization
+              level: 3
+              level_code: L3
+              weight: 0.6
+              children:
+                - id: org_sg_marketing
+                  name: 新加坡市场部
+                  type: organization
+                  level: 4
+                  level_code: L4
+                  weight: 1.0
+                  permission_scope: ["sg_marketing_manager", "global_manager"]
+    # ========== 经营侧（含数学分解 + 维度池） ==========
+    - id: op_side
+      name: 经营侧
+      type: operation
+      level: 1
+      level_code: L1
+      weight: 1.0
+      formula: "op_user + op_product + op_marketing + op_supply_chain"
+      children:
+        - id: op_user
+          name: 用户
+          type: operation
+          level: 2
+          level_code: L2
+          formula: "uv * conversion_rate * avg_order_value"
+          children:
+            - id: op_uv
+              name: UV
+              type: operation
+              level: 3
+              level_code: L3
+              formula: "new_user_uv + old_user_uv"
+              dimension_pool:
+                - dimension_name: 用户类型
+                  dimension_id: dim_user_type
+                  child_nodes: ["op_new_user_uv", "op_old_user_uv"]
+                  data_slice_rule:
+                    source_view: "bi_readonly.user_activity"
+                    group_by_field: "user_type"
+                    metric_field: "uv"
+                    agg_func: "SUM"
+                    child_mapping:
+                      - node_id: "op_new_user_uv"
+                        group_value: "new"
+                      - node_id: "op_old_user_uv"
+                        group_value: "old"
+              children:
+                - id: op_new_user_uv
+                  name: 新客UV
+                  type: operation
+                  level: 4
+                  level_code: L4
+                - id: op_old_user_uv
+                  name: 老客UV
+                  type: operation
+                  level: 4
+                  level_code: L4
+                  dimension_pool:
+                    - dimension_name: 会员活动
+                      dimension_id: dim_member_activity
+                      child_nodes: ["act_member_day_participation", "act_weekly_checkin"]
+                      data_slice_rule:
+                        source_view: "bi_readonly.user_activity"
+                        group_by_field: "activity_type"
+                        metric_field: "uv"
+                        agg_func: "SUM"
+                        child_mapping:
+                          - node_id: "act_member_day_participation"
+                            group_value: "member_day"
+                          - node_id: "act_weekly_checkin"
+                            group_value: "weekly_checkin"
+                  children:
+                    - id: act_member_day_participation
+                      name: 会员日活动参与率
+                      type: action
+                      level: 5
+                      level_code: L5
+                      pseudo_weight: 0.35
+                      data_source:
+                        db_view: "bi_readonly.user_activity"
+                        field: "member_day_participation_rate"
+                        agg_func: "AVG"
+                    - id: act_weekly_checkin
+                      name: 每周签到率
+                      type: action
+                      level: 5
+                      level_code: L5
+                      pseudo_weight: 0.2
+                      data_source:
+                        db_view: "bi_readonly.user_activity"
+                        field: "weekly_checkin_rate"
+                        agg_func: "AVG"
+        - id: op_product
+          name: 产品
+          type: operation
+          level: 2
+          level_code: L2
+          children: []
+        - id: op_marketing
+          name: 营销
+          type: operation
+          level: 2
+          level_code: L2
+          children:
+            - id: op_ad_traffic
+              name: 广告流量
+              type: operation
+              level: 3
+              level_code: L3
+              formula: "ad_impression * ctr * cvr"
+              dimension_pool:
+                - dimension_name: 广告渠道
+                  dimension_id: dim_ad_channel
+                  child_nodes: ["act_facebook_ads", "act_google_ads"]
+                  data_slice_rule:
+                    source_view: "bi_readonly.marketing_spend"
+                    group_by_field: "channel"
+                    metric_field: "ad_spend"
+                    agg_func: "SUM"
+                    child_mapping:
+                      - node_id: "act_facebook_ads"
+                        group_value: "facebook"
+                      - node_id: "act_google_ads"
+                        group_value: "google"
+              children:
+                - id: act_facebook_ads
+                  name: Facebook广告
+                  type: action
+                  level: 4
+                  level_code: L4
+                  pseudo_weight: 0.5
+                  data_source:
+                    db_view: "bi_readonly.marketing_spend"
+                    field: "facebook_spend"
+                    agg_func: "SUM"
+                - id: act_google_ads
+                  name: Google广告
+                  type: action
+                  level: 4
+                  level_code: L4
+                  pseudo_weight: 0.5
+                  data_source:
+                    db_view: "bi_readonly.marketing_spend"
+                    field: "google_spend"
+                    agg_func: "SUM"
+        - id: op_supply_chain
+          name: 供应链
+          type: operation
+          level: 2
+          level_code: L2
+          children: []
+  # ========== GMV 根节点的维度池（用于熵减选择下钻起点） ==========
+  dimension_pool:
+    - dimension_name: 区域
+      dimension_id: dim_region
+      child_nodes: ["org_asia_pacific"]
+      data_slice_rule:
+        source_view: "bi_readonly.region_gmv"
+        group_by_field: "region"
+        metric_field: "gmv"
+        agg_func: "SUM"
+    - dimension_name: 经营模块
+      dimension_id: dim_operation
+      child_nodes: ["op_user", "op_product", "op_marketing", "op_supply_chain"]
